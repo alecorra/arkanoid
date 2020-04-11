@@ -18,10 +18,11 @@ const GAP = 10;
 const BALL_SIZE = 10;
 const BALL_SPEED_Y = 7;
 
-const BRICK_W = 100;
-const BRICK_H = 50;
-const BRICK_COUNT = 8;
+const BRICK_W = 80;
+const BRICK_H = 20;
 const BRICK_GAP = 2;
+const BRICK_COLS = 10;
+const BRICK_ROWS = 14;
 
 let canvas, canvasContext;
 let framePerSecond = 30;
@@ -37,7 +38,7 @@ let paddleY = CANVAS_HEIGHT - PADDLE_THICKNESS - GAP;
 let mouseX;
 let mouseY;
 
-let brickGrid = new Array;
+let brickGrid = new Array(BRICK_COLS * BRICK_ROWS);
 
 const updateMousePosition = (e) => {
 
@@ -54,12 +55,8 @@ const updateMousePosition = (e) => {
 }
 
 const brickReset = () => {
-	for (let i = 0; i < BRICK_COUNT; i++) {
-		if (Math.random() < 0.5) {
-			brickGrid[i] = true;
-		} else {
-			brickGrid[i] = false;
-		}
+	for (let i = 0; i < BRICK_COLS * BRICK_ROWS; i++) {
+		brickGrid[i] = true;
 	}
 }
 
@@ -103,6 +100,19 @@ const moveAll = () => {
 		ballSpeedY = -ballSpeedY;
 	}
 
+	let ballBrickCol = Math.floor(ballX / BRICK_W);
+	let ballBrickRow = Math.floor(ballY / BRICK_H);
+	let brickIndexUnderBall = rowColToArrayIndex(ballBrickCol, ballBrickRow);
+
+	if (ballBrickCol >= 0 && ballBrickCol < BRICK_COLS &&
+		ballBrickRow >= 0 && ballBrickRow < BRICK_ROWS) {
+
+			if (brickGrid[brickIndexUnderBall]) {
+				brickGrid[brickIndexUnderBall] = false;
+				ballSpeedY = -ballSpeedY;
+			}
+		}
+
 	let paddleBottomEdge = CANVAS_HEIGHT - GAP;
 	let paddleTopEdge = paddleBottomEdge - PADDLE_THICKNESS;
 	let paddleLeftEdge = paddleX;
@@ -131,7 +141,6 @@ const drawAll = () => {
 	drawRect(0, 0, canvas.width, canvas.height, BLACK);
 	drawBall(ballX, ballY, BALL_SIZE, RED);
 	drawRect(paddleX, paddleY, PADDLE_WIDTH, PADDLE_THICKNESS, WHITE);
-	colorText(`X:${mouseX} ; Y:${mouseY}`, mouseX, mouseY, YELLOW);
 	drawBricks();
 }
 
@@ -148,11 +157,21 @@ const drawBall = (centerX, centerY, radius, color) => {
 }
 
 const drawBricks = () => {
-	for (let i = 0; i < BRICK_COUNT; i++) {
-		if (brickGrid[i]) {
-			drawRect(BRICK_W * i, 0, BRICK_W - BRICK_GAP, BRICK_H, BLUE);
+	for (let eachRow = 0; eachRow < BRICK_ROWS; eachRow++) {
+
+		for (let eachCol = 0; eachCol < BRICK_COLS; eachCol++) {
+
+			let arrayIndex = rowColToArrayIndex(eachCol, eachRow);	// give unique index per every brick
+
+			if (brickGrid[arrayIndex]) {
+				drawRect(BRICK_W * eachCol, BRICK_H * eachRow, BRICK_W - BRICK_GAP, BRICK_H - BRICK_GAP, BLUE);
+			}
 		}
 	}
+}
+
+const rowColToArrayIndex = (col, row) => {
+	return col + (BRICK_COLS * row);
 }
 
 const resetBall = () => {
