@@ -25,7 +25,7 @@ const BRICK_COLS = 10;
 const BRICK_ROWS = 14;
 
 let canvas, canvasContext;
-let framePerSecond = 60;
+let framePerSecond = 30;
 
 let ballX = 75;
 let ballSpeedX = 5;
@@ -39,6 +39,7 @@ let mouseX;
 let mouseY;
 
 let brickGrid = new Array(BRICK_COLS * BRICK_ROWS);
+let bricksLeft = 0;
 
 const updateMousePosition = (e) => {
 
@@ -55,8 +56,16 @@ const updateMousePosition = (e) => {
 }
 
 const brickReset = () => {
-	for (let i = 0; i < BRICK_COLS * BRICK_ROWS; i++) {
+	bricksLeft = 0;
+	let i;
+
+	for (i = 0; i < BRICK_COLS * 3; i++) {		// first 3 rows empty
+		brickGrid[i] = false;
+	}
+
+	for (; i < BRICK_COLS * BRICK_ROWS; i++) {
 		brickGrid[i] = true;
+		bricksLeft ++;
 	}
 }
 
@@ -72,6 +81,7 @@ window.onload = () => {
 	canvas.addEventListener('mousemove', updateMousePosition);
 
 	brickReset();
+	resetBall();
 }
 // ===================================================================================
 
@@ -87,6 +97,8 @@ const moveAll = () => {
 }
 
 const ballMove = () => {
+	// ballX = mouseX;
+	// ballY = mouseY;		// just for dev mode
 	ballX += ballSpeedX;
 	ballY += ballSpeedY;
 
@@ -120,6 +132,8 @@ const ballBrickHandling = () => {
 
 			if (brickGrid[brickIndexUnderBall]) {
 				brickGrid[brickIndexUnderBall] = false;
+				bricksLeft --;
+				console.log(bricksLeft);
 
 				let prevBallX = ballX - ballSpeedX;
 				let prevBallY = ballY - ballSpeedY;
@@ -169,12 +183,17 @@ const ballPaddleHandling = () => {
 		let ballDistanceFromPaddleCenterX = ballX - centerOfPaddleX;	// - if before, + if after, 0 if center
 		ballSpeedX = Math.floor(ballDistanceFromPaddleCenterX * 0.35);
 		let absoluteValueBallDistanceFromPaddleCenterX = Math.round(Math.sqrt(ballDistanceFromPaddleCenterX ** 2));		// return positive value
+
 		if (absoluteValueBallDistanceFromPaddleCenterX < 15) {
 			ballSpeedY = -BALL_SPEED_Y;
 		} else if (absoluteValueBallDistanceFromPaddleCenterX > 15 && absoluteValueBallDistanceFromPaddleCenterX < 40) {
 			ballSpeedY = -(BALL_SPEED_Y * Math.sin(60 * Math.PI / 180));
 		} else {
 			ballSpeedY = -(BALL_SPEED_Y * Math.sin(45 * Math.PI / 180));
+		}
+
+		if (bricksLeft === 0) {
+			brickReset();
 		}
 	}
 }
