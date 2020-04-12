@@ -25,7 +25,7 @@ const BRICK_COLS = 10;
 const BRICK_ROWS = 14;
 
 let canvas, canvasContext;
-let framePerSecond = 30;
+let framePerSecond = 60;
 
 let ballX = 75;
 let ballSpeedX = 5;
@@ -81,25 +81,36 @@ const updateAll = () => {
 }
 
 const moveAll = () => {
+	ballMove();
+	ballBrickHandling();
+	ballPaddleHandling();
+}
+
+const ballMove = () => {
 	ballX += ballSpeedX;
 	ballY += ballSpeedY;
 
 	if (ballX > canvas.width) {		// right edge
 		ballSpeedX = -ballSpeedX;
+		ballX = CANVAS_WIDTH;
 	}
 
 	if (ballX < 0) {	// left edge
 		ballSpeedX = -ballSpeedX;
+		ballX = 0;
 	}
 
-	if (ballY > canvas.height) {	// bottom edge
+	if (ballY > canvas.height - BALL_SIZE) {	// bottom edge
 		resetBall()
 	}
 
 	if (ballY < 0) {	// top edge
 		ballSpeedY = -ballSpeedY;
+		ballY = 0;
 	}
+}
 
+const ballBrickHandling = () => {
 	let ballBrickCol = Math.floor(ballX / BRICK_W);
 	let ballBrickRow = Math.floor(ballY / BRICK_H);
 	let brickIndexUnderBall = rowColToArrayIndex(ballBrickCol, ballBrickRow);
@@ -109,10 +120,41 @@ const moveAll = () => {
 
 			if (brickGrid[brickIndexUnderBall]) {
 				brickGrid[brickIndexUnderBall] = false;
-				ballSpeedY = -ballSpeedY;
+
+				let prevBallX = ballX - ballSpeedX;
+				let prevBallY = ballY - ballSpeedY;
+				let prevBrickCol = Math.floor(prevBallX / BRICK_W);
+				let prevBrickRow = Math.floor(prevBallY / BRICK_H);
+
+				let bothTestFailed = true;		// to void armpit scenario (ball 45^ between 2 bricks)
+
+				if (prevBrickCol != ballBrickCol) {
+					let adjBrickSide = rowColToArrayIndex(prevBrickCol, ballBrickRow);
+					
+					if (!brickGrid[adjBrickSide]) {
+						ballSpeedX = -ballSpeedX;
+						bothTestFailed = false;
+					}
+				}
+
+				if (prevBrickRow != ballBrickRow) {
+					let adjBrickTopBot = rowColToArrayIndex(ballBrickCol, prevBrickRow);
+
+					if (!brickGrid[adjBrickTopBot]) {
+						ballSpeedY = -ballSpeedY;
+						bothTestFailed = false;
+					}
+				}
+
+				if (bothTestFailed) {
+					ballSpeedX = -ballSpeedX;
+					ballSpeedY = -ballSpeedY;
+				}
 			}
 		}
+}
 
+const ballPaddleHandling = () => {
 	let paddleBottomEdge = CANVAS_HEIGHT - GAP;
 	let paddleTopEdge = paddleBottomEdge - PADDLE_THICKNESS;
 	let paddleLeftEdge = paddleX;
@@ -125,7 +167,7 @@ const moveAll = () => {
 
 		let centerOfPaddleX = paddleLeftEdge + (PADDLE_WIDTH / 2);
 		let ballDistanceFromPaddleCenterX = ballX - centerOfPaddleX;	// - if before, + if after, 0 if center
-		ballSpeedX = ballDistanceFromPaddleCenterX * 0.35;
+		ballSpeedX = Math.floor(ballDistanceFromPaddleCenterX * 0.35);
 		let absoluteValueBallDistanceFromPaddleCenterX = Math.round(Math.sqrt(ballDistanceFromPaddleCenterX ** 2));		// return positive value
 		if (absoluteValueBallDistanceFromPaddleCenterX < 15) {
 			ballSpeedY = -BALL_SPEED_Y;
